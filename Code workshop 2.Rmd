@@ -1,0 +1,163 @@
+---
+title: "Code workshop 2"
+author: "Yue Tian"
+date: "4/13/2021"
+output: html_document
+---
+
+## Introduction 
+
+For the series of workshops we will cover data manipulation, data visualization and model implementation.
+This workshop will help you have more confidence with processing data in R.
+
+Today, we will start the first part, data manipulation. 
+Data manipulation includes 
+
+- Group by functino 
+- NA process
+- introduction to ggplot 2
+
+We will use the following packages. 
+
+- dplyr
+- tidyverse
+- nycflights13(this is the data we will use)
+- ggplot 2
+
+## Installing packages
+
+```{r}
+#install.packages("ggplot2")
+
+```
+
+## Call packages
+
+```{r}
+library("dplyr")
+library("tidyverse")
+library("nycflights13")
+library("ggplot2")
+```
+
+
+## Summaries using summarize()
+
+- get the average delay for the whole 2013 
+- na.rm = TRUE : we remove all NA's in our dataframe 
+```{r}
+dat = flights
+summarize(dat,delay = mean(dep_delay,na.rm = TRUE))
+```
+
+
+- Use group_by() with summarize
+- group_by function is efficient when you want to analysis the result based on the specific attributes of the data
+- For instance, if I want to calculate the average dealy of each air liner, using group-by function can save us a lot of time
+
+-Before we use group_by function we can try another way to calculate the average dealy for each airliner
+```{r}
+air_liners = unique(dat$carrier)
+print(air_liners)
+```
+
+```{r}
+UA = filter(dat,carrier == "UA")
+print(UA)
+```
+```{r}
+UA_delay = mean(UA$dep_delay)
+print(UA_delay)
+```
+- Why this is NA?
+
+```{r}
+print(head(UA$dep_delay))
+```
+
+- We need to remove the na when we use the function mean()
+```{r}
+UA_delay = mean(UA$dep_delay,na.rm = TRUE)
+print(UA_delay)
+```
+- You can repeat this process for the rest of the airliners. But we can do this in a much faster fashion 
+- That is use group_by function 
+
+```{r}
+by_airliner = group_by(dat,carrier)
+avg_delay_airliner = summarize(by_airliner, mean_delay = mean(dep_delay,na.rm = TRUE))
+print(avg_delay_airliner)
+```
+
+- Moreover, at the summarize function you can add other attributes
+- For instance if I want to calculate the standard deviation and the average at the same time
+```{r}
+by_airliner = group_by(dat,carrier)
+x = summarize(by_airliner,std = sd(dep_delay,na.rm = TRUE),mean_delay = mean(dep_delay,na.rm = TRUE))
+print(x)
+```
+
+## NA process
+
+- When dealing with real data, one major task is to clean up the missing values (NA) in the data. NA's is inevitable since we cannot guarantee that there is no error during the process of collecting the data. For example, if a peanlist forget to fill in a number in the survey monkey question, it would create a NA there. In practice, we simply call the panelist to re-do this question. But if you are dealing with thousands of panelist in a study then it is practically impossible to call every panelist to fix the NA problem. 
+
+- Moreover, NA also creates problems for the functions we use. For example, the mean fuction above, would get the result NA if there is a NA presented in the data.
+
+- So we need some ways to process the NA's to prevent them from disturbing our analysis. And there are many ways including: directly remove the NA, replace the NA with the average or "guess" the value of NA using AI. 
+
+# Detection of NA
+
+- to detect if there is a NA in your data frame or in your favored attributes you can use is.na() function 
+```{r}
+is.na(2)
+```
+
+- Now we can detect the NA in a column 
+
+```{r}
+head(is.na(dat$dep_delay))
+```
+
+- This will return every data point and we do not want this. We just want to see if there is NA in this column
+- Therefore, we can use the filter function
+
+```{r}
+NA_in_delay = filter(dat,is.na(dat$dep_delay) == TRUE)
+print(NA_in_delay)
+```
+
+```{r}
+NA_removed_in_delay = filter(dat,is.na(dat$dep_delay) == FALSE)
+print(NA_removed_in_delay)
+```
+- Another way to drop the NA is use drop_na() function 
+
+- You can directly use the drop_na() functino on the entire dataframe
+```{r}
+NA_removed_dat = drop_na(dat)
+print(NA_removed_dat)
+```
+- And you can use na.rm in mean() function or sd() function as we did before
+
+
+# Replace the NA with column average
+```{r}
+NA_in_delay = filter(dat,is.na(dat$dep_delay) == TRUE)
+print(NA_in_delay)
+```
+
+```{r}
+NA_in_delay$dep_delay[is.na(NA_in_delay$dep_delay)] = mean(dat$dep_delay, na.rm = TRUE)
+print(NA_in_delay)
+```
+
+## Introduction to ggplot2
+
+- ggplot2 is a powerful package of data visualization.
+
+- Creat a ggplot 
+```{r}
+ggplot(data = dat)+
+  geom_bar(mapping = aes(x = carrier,fill =origin))
+```
+
